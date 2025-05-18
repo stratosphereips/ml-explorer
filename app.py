@@ -23,6 +23,14 @@ import math
 
 # --- Sidebar configuration with hover tooltips ---
 st.sidebar.title("Configuration")
+# Fullscreen option for plots
+fullscreen = st.sidebar.checkbox(
+    "Fullscreen plots",
+    False,
+    help="Toggle to display plots in full container width/height for detail."
+)
+
+st.sidebar.title("Configuration")
 # Dataset selection
 dataset_name = st.sidebar.selectbox(
     "Select synthetic dataset:",
@@ -226,7 +234,8 @@ for _, row in metrics_df.iterrows():
             Z = (Z_raw>0).astype(int).reshape(xx.shape)
         else:
             Z = Z_raw.reshape(xx.shape)
-        plt.figure(figsize=(6,4))
+        fig_w, fig_h = (12, 8) if fullscreen else (4, 3)
+        plt.figure(figsize=(fig_w, fig_h))
         plt.contourf(xx, yy, Z, alpha=0.3)
         plt.scatter(x_vis[:,0], x_vis[:,1], c=y_train, edgecolor='k', s=20)
         plt.title(name)
