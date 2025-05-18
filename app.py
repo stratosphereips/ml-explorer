@@ -20,31 +20,43 @@ from sklearn.base import clone
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, accuracy_score
 import math
 
-# --- Sidebar configuration ---
+# --- Sidebar configuration with hover tooltips ---
 st.sidebar.title("Configuration")
 
 # Dataset selection
 dataset_name = st.sidebar.selectbox(
     "Select synthetic dataset:",
-    ("make_classification", "make_moons", "make_circles", "make_blobs", "make_gaussian_quantiles")
+    ("make_classification", "make_moons", "make_circles", "make_blobs", "make_gaussian_quantiles"),
+    help="Pick the type of synthetic data generation function from scikit-learn."
 )
 # Samples and features
-n_samples = st.sidebar.slider("Number of samples:", 100, 2000, 500, step=100)
-n_features = st.sidebar.slider("Number of features:", 2, 20, 10)
+n_samples = st.sidebar.slider(
+    "Number of samples:", 100, 2000, 500, step=100,
+    help="Choose how many data points (rows) to generate in the dataset."
+)
+n_features = st.sidebar.slider(
+    "Number of features:", 2, 20, 10,
+    help="Select the dimensionality (number of features) for the generated data."
+)
 
 # Feature selection
 fs_method = st.sidebar.selectbox(
     "Feature selection method:",
-    ("None", "VarianceThreshold", "SelectKBest - ANOVA F-test", "SelectKBest - Mutual Information", "Tree-based importance")
+    ("None", "VarianceThreshold", "SelectKBest - ANOVA F-test", "SelectKBest - Mutual Information", "Tree-based importance"),
+    help="Choose a technique to remove or select the most relevant features before training."
 )
 fs_k = None
 if fs_method.startswith("SelectKBest") or fs_method == "Tree-based importance":
-    fs_k = st.sidebar.slider("Number of features to select (k):", 1, n_features, min(2, n_features))
+    fs_k = st.sidebar.slider(
+        "Number of features to select (k):", 1, n_features, min(2, n_features),
+        help="When selecting features, choose the exact number of top features to keep."
+    )
 
 # Feature reduction
 fr_method = st.sidebar.selectbox(
     "Feature reduction method:",
-    ("None", "PCA", "KernelPCA (RBF)")
+    ("None", "PCA", "KernelPCA (RBF)"),
+    help="Choose a dimensionality reduction method to project features into 2D space for visualization."
 )
 fr_components = None
 if fr_method in ("PCA", "KernelPCA (RBF)"):
@@ -53,7 +65,8 @@ if fr_method in ("PCA", "KernelPCA (RBF)"):
 # Scaling
 scaler_name = st.sidebar.selectbox(
     "Scaling method:",
-    ("None", "StandardScaler", "MinMaxScaler", "RobustScaler")
+    ("None", "StandardScaler", "MinMaxScaler", "RobustScaler"),
+    help="Apply normalization or scaling to features to improve classifier performance."
 )
 
 # --- Generate synthetic data ---
@@ -214,4 +227,3 @@ for _, row in metrics_df.iterrows():
         plt.xlabel("Component 1")
         plt.ylabel("Component 2")
         st.pyplot(plt)
-
