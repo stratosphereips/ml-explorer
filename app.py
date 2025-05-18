@@ -158,22 +158,27 @@ classifiers = {
     "Passive Aggressive": SGDClassifier(max_iter=1000, loss="hinge")
 }
 
-# Iterate through classifiers
+# Iterate through classifiers and compute metrics
 results = []
 for name, clf in classifiers.items():
     model = clone(clf)
     model.fit(X_train_pre, y_train)
     y_pred = model.predict(X_test_pre)
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+    # Rates
+    tpr = tp / (tp + fn) if (tp + fn) > 0 else 0  # Sensitivity / Recall
+    tnr = tn / (tn + fp) if (tn + fp) > 0 else 0  # Specificity
+    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+    fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
     precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
+    recall = tpr
     f1 = f1_score(y_test, y_pred)
     accuracy = accuracy_score(y_test, y_pred)
-    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
-    gmean = math.sqrt(recall * specificity)
+    gmean = math.sqrt(tpr * tnr)
     results.append({
         "Classifier": name,
         "TP": tp, "TN": tn, "FP": fp, "FN": fn,
+        "TPR": tpr, "TNR": tnr, "FPR": fpr, "FNR": fnr,
         "Accuracy": accuracy,
         "Precision": precision,
         "Recall": recall,
@@ -186,7 +191,7 @@ metrics_df = pd.DataFrame(results)
 st.subheader("Performance Metrics on Test Set")
 st.dataframe(metrics_df, use_container_width=True)
 
-# Plot decision boundaries in expanders
+# Plot decision boundaries
 x_vis_train = X_train_pre[:, :2]
 for _, row in metrics_df.iterrows():
     name = row["Classifier"]
