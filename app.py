@@ -234,7 +234,7 @@ for _, row in metrics_df.iterrows():
             Z = (Z_raw>0).astype(int).reshape(xx.shape)
         else:
             Z = Z_raw.reshape(xx.shape)
-        fig_w, fig_h = (12, 8) if fullscreen else (4, 3)
+        fig_w, fig_h = (6, 4) if fullscreen else (3, 2)
         plt.figure(figsize=(fig_w, fig_h))
         plt.contourf(xx, yy, Z, alpha=0.3)
         plt.scatter(x_vis[:,0], x_vis[:,1], c=y_train, edgecolor='k', s=20)
