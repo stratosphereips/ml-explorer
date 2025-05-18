@@ -14,9 +14,11 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Gradien
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
+from sklearn.base import clone
 
 # --- Sidebar configuration ---
 st.sidebar.title("Configuration")
+
 # Dataset selection
 dataset_name = st.sidebar.selectbox(
     "Select synthetic dataset:",
@@ -42,7 +44,7 @@ fr_method = st.sidebar.selectbox(
 )
 fr_components = None
 if fr_method in ("PCA", "KernelPCA (RBF)"):
-    fr_components = 2  # For 2D plotting
+    fr_components = 2  # Always reduce to 2D for visualization
 
 # Scaling
 scaler_name = st.sidebar.selectbox(
@@ -94,10 +96,10 @@ def get_data(name):
 
 X, y = get_data(dataset_name)
 
-# --- Split and preprocess ---
+# --- Split data ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Feature Selection
+# --- Feature Selection ---
 if fs_method == "VarianceThreshold":
     sel = VarianceThreshold(threshold=0.1)
     X_train = sel.fit_transform(X_train)
@@ -119,7 +121,7 @@ elif fs_method == "Tree-based importance":
     X_train = X_train[:, idxs]
     X_test = X_test[:, idxs]
 
-# Feature Reduction
+# --- Feature Reduction ---
 if fr_method == "PCA":
     reducer = PCA(n_components=fr_components)
     X_train = reducer.fit_transform(X_train)
@@ -129,7 +131,7 @@ elif fr_method == "KernelPCA (RBF)":
     X_train = reducer.fit_transform(X_train)
     X_test = reducer.transform(X_test)
 
-# Scaling
+# --- Scaling ---
 if scaler_name == "StandardScaler":
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
@@ -148,24 +150,32 @@ model = classifiers[classifier_name]
 model.fit(X_train, y_train)
 
 # --- Plot decision boundary ---
-# We limit to 2D for visualization
-if X_train.shape[1] != 2:
-    st.warning("Data is not 2D; plotting uses first two features/components.")
-# create mesh grid
-x_min, x_max = X_train[:, 0].min() - 1, X_train[:, 0].max() + 1
-ny_min, y_max = X_train[:, 1].min() - 1, X_train[:, 1].max() + 1
-xx, yy = np.meshgrid(
-    np.linspace(x_min, x_max, 200),
-    np.linspace(ny_min, y_max, 200)
-)
-Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-Z = Z.reshape(xx.shape)
+# Visualize in 2D: use first two features/components
+if X_train.shape[1] < 2:
+    st.error("Not enough dimensions to plot decision boundary.")
+else:
+    X_vis = X_train[:, :2]
+    # Retrain a copy of the model on the 2D data for plotting
+    model_vis = clone(model)
+    model_vis.fit(X_vis, y_train)
 
-plt.figure(figsize=(8, 6))
-plt.contourf(xx, yy, Z, alpha=0.3)
-# plot training points
-plt.scatter(X_train[:, 0], X_train[:, 1], c=y_train, edgecolor='k', s=20)
-plt.title(f"Decision Boundary: {classifier_name}")
-plt.xlabel("Feature 1")
-plt.ylabel("Feature 2")
-st.pyplot(plt)
+    # Create mesh grid in the 2D feature space
+    x_min, x_max = X_vis[:, 0].min() - 1, X_vis[:, 0].max() + 1
+    y_min, y_max = X_vis[:, 1].min() - 1, X_vis[:, 1].max() + 1
+    xx, yy = np.meshgrid(
+        np.linspace(x_min, x_max, 200),
+        np.linspace(y_min, y_max, 200)
+    )
+    # Predict labels for each point in the grid
+    Z = model_vis.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, alpha=0.3)
+    plt.scatter(X_vis[:, 0], X_vis[:, 1], c=y_train, edgecolor='k', s=20)
+    plt.title(f"Decision Boundary: {classifier_name} (2D projection)")
+    plt.xlabel("Component 1")
+    plt.ylabel("Component 2")
+    st.pyplot(plt)
+
