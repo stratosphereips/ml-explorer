@@ -23,13 +23,7 @@ import math
 
 # --- Sidebar configuration with hover tooltips ---
 st.sidebar.title("Configuration")
-# Fullscreen option for plots
-fullscreen = st.sidebar.checkbox(
-    "Fullscreen plots",
-    False,
-    help="Toggle to display plots in full container width/height for detail."
-)
-
+# --- Sidebar configuration with hover tooltips ---
 st.sidebar.title("Configuration")
 # Dataset selection
 dataset_name = st.sidebar.selectbox(
@@ -216,30 +210,42 @@ st.subheader("Performance Metrics on Test Set")
 st.dataframe(metrics_df, use_container_width=True)
 # Plot decision boundaries
 x_vis = X_train_pre[:, :2]
+# Create mesh grid once based on x_vis
+x_min, x_max = x_vis[:,0].min() - 1, x_vis[:,0].max() + 1
+y_min, y_max = x_vis[:,1].min() - 1, x_vis[:,1].max() + 1
+xx, yy = np.meshgrid(
+    np.linspace(x_min, x_max, 200),
+    np.linspace(y_min, y_max, 200)
+)
 for _, row in metrics_df.iterrows():
     name = row["Model"]
     exp = st.expander(f"Decision Boundary: {name}")
     with exp:
-        est_vis = clone(models[name])
-        if name in ["Local Outlier Factor"]:
-            est_vis.fit(x_vis)
+        # use columns to restrict plot width
+        col1, _ = st.columns([1, 2])
+        # zoom toggle
+        zoom = col1.checkbox("Enlarge plot", key=f"zoom_{name}")
+        fig_w, fig_h = (6, 4) if zoom else (3, 2)
+        # train on 2D for visualization
+        model_vis = clone(models[name])
+        if name == "Local Outlier Factor":
+            model_vis.fit(x_vis)
         else:
-            est_vis.fit(x_vis, y_train if name not in ["Isolation Forest", "One-Class SVM"] else None)
-        xx, yy = np.meshgrid(
-            np.linspace(x_vis[:,0].min()-1, x_vis[:,0].max()+1, 200),
-            np.linspace(x_vis[:,1].min()-1, x_vis[:,1].max()+1, 200)
-        )
-        Z_raw = est_vis.predict(np.c_[xx.ravel(), yy.ravel()])
+            fit_args = (x_vis, y_train) if name not in ["Isolation Forest", "One-Class SVM"] else (x_vis, None)
+            model_vis.fit(*fit_args)
+        # predict on grid
+        Z_pred = model_vis.predict(np.c_[xx.ravel(), yy.ravel()])
+        # map anomalies
         if name in ["Isolation Forest", "One-Class SVM", "Local Outlier Factor"]:
-            Z = (Z_raw>0).astype(int).reshape(xx.shape)
+            Z = (Z_pred > 0).astype(int).reshape(xx.shape)
         else:
-            Z = Z_raw.reshape(xx.shape)
-        fig_w, fig_h = (6, 4) if fullscreen else (3, 2)
+            Z = Z_pred.reshape(xx.shape)
+        # plot
         plt.figure(figsize=(fig_w, fig_h))
         plt.contourf(xx, yy, Z, alpha=0.3)
         plt.scatter(x_vis[:,0], x_vis[:,1], c=y_train, edgecolor='k', s=20)
         plt.title(name)
         plt.xlabel("Component 1")
         plt.ylabel("Component 2")
-        st.pyplot(plt)
+        col1.pyplot(plt)
 
