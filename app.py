@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif, mutual_info_classif
@@ -180,14 +181,15 @@ for name, clf in classifiers.items():
         "G-Mean": gmean
     })
 
-# Display metrics table
+# Display metrics table (sortable)
+metrics_df = pd.DataFrame(results)
 st.subheader("Performance Metrics on Test Set")
-st.table(results)
+st.dataframe(metrics_df, use_container_width=True)
 
 # Plot decision boundaries in expanders
 x_vis_train = X_train_pre[:, :2]
-for res in results:
-    name = res["Classifier"]
+for _, row in metrics_df.iterrows():
+    name = row["Classifier"]
     exp = st.expander(f"Decision Boundary: {name}")
     with exp:
         model_vis = clone(classifiers[name])
@@ -206,3 +208,4 @@ for res in results:
         plt.xlabel("Component 1")
         plt.ylabel("Component 2")
         st.pyplot(plt)
+
