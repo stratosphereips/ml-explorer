@@ -2,6 +2,10 @@
 
 A Streamlit app to explore classification and anomaly-detection pipelines on synthetic datasets! 🧪
 
+
+<img width="1863" alt="image" src="https://github.com/user-attachments/assets/c5f1048a-0551-4fb6-b60c-d7965a5a990d" />
+
+
 ## 🔍 Features
 
 * **Synthetic Data Generators**:
