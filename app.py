@@ -29,6 +29,18 @@ dataset_name = st.sidebar.selectbox(
     ("make_classification", "make_moons", "make_circles", "make_blobs", "make_gaussian_quantiles"),
     help="Pick the type of synthetic data generation function from scikit-learn."
 )
+# Dataset descriptions
+with st.sidebar.expander("Dataset descriptions", expanded=False):
+    st.markdown(
+        """
+- **make_classification**: a random n-class classification problem with informative/redundant features.
+- **make_moons**: two interleaving half circles suitable for non-linear classifiers.
+- **make_circles**: large circle containing a smaller circle, good for kernel methods.
+- **make_blobs**: isotropic Gaussian blobs for clustering and simple separability.
+- **make_gaussian_quantiles**: Gaussian samples divided into discrete quantiles (classes).
+        """
+    )
+
 # Samples and features
 n_samples = st.sidebar.slider(
     "Number of samples:", 100, 2000, 500, step=100,
@@ -227,3 +239,4 @@ for _, row in metrics_df.iterrows():
         plt.xlabel("Component 1")
         plt.ylabel("Component 2")
         st.pyplot(plt)
+
